@@ -63,7 +63,7 @@ public class Initialization implements Control {
 		for (int i = 0; i < Network.size(); i++) {	
 			//Método que inicializa listas para publicar/suscribirse
 			ArrayList<Integer> BD = obtenerBD(i,tamanoBD);
-			ArrayList<Integer> DHT = myDHT(i,distancias,tamanoRed);
+			ArrayList<Integer> DHT = myDHT(i,distancias,tamanoRed,tamanoDHT);
 			((Peer)Network.get(i)).initPeer(i,Cache,DHT,tamanoRed,BD,tamanoBD);
 			int linkableID = FastConfig.getLinkable(this.idLayer);
 			Linkable linkable = (Linkable)((Peer) Network.get(i)).getProtocol(linkableID);
@@ -87,9 +87,9 @@ public class Initialization implements Control {
 		int inicial = 1;
 		int valorX = 1;
 		// Obtiene denominadores hasta completar tamaño de la red
-		while(inicial<=tamanoRed){
+		while(inicial<tamanoRed){
 			inicial = inicial * 2;
-			if(inicial<=tamanoRed){
+			if(inicial<tamanoRed){
 				denominadores.add(inicial);
 				x.add(valorX);
 				valorX++;
@@ -114,15 +114,18 @@ public class Initialization implements Control {
 		return base;
 	}
 	
-	public ArrayList<Integer> myDHT(int id, ArrayList<Integer> distancias,int tamanoRed){
+	public ArrayList<Integer> myDHT(int id, ArrayList<Integer> distancias,int tamanoRed, int tamanoDHT){
 		ArrayList<Integer> DHT = new ArrayList<Integer>();
-		for(int i=0;i<distancias.size();i++){
-			int vecinoDht = id+distancias.get(i);
-			if(vecinoDht<tamanoRed){
-				DHT.add(vecinoDht);
-			}else{
-				vecinoDht = vecinoDht - tamanoRed;
-				DHT.add(vecinoDht);
+		for(int i=0;i<tamanoDHT;i++){
+			
+			if(DHT.size()<tamanoDHT && i<distancias.size()){
+				int vecinoDht = id+distancias.get(i);
+				if(vecinoDht<tamanoRed){
+					DHT.add(vecinoDht);
+				}else{
+					vecinoDht = vecinoDht - tamanoRed;
+					DHT.add(vecinoDht);
+				}
 			}
 		}
 		return DHT;

@@ -49,9 +49,92 @@ public class Layer implements Cloneable, EDProtocol {
 		 * CurrentNode, es el nodo actual
 		 * message, es el mensaje que viene como objeto, por lo cual se debe trabajar sobre �l
 		 */
+		// Castear mensaje
+		Message mensaje = (Message)message;
+		// Casteo de nodo
+		Peer nodoActual = (Peer)currentNode;
 		
+		// Obtener datos de mensaje
+		String contenido = mensaje.getMensaje();
+		long receptor = mensaje.getReceptor();
+		long dato = mensaje.getDato();
+		ArrayList<Integer> camino = mensaje.getCamino();
+		
+		// Datos Peer actual
+		long id = nodoActual.getID();
+		long vecino = ((Linkable) nodoActual.getProtocol(0)).getNeighbor(0).getID();
+		
+		if(mensaje.getRecibido()==false){
+			// Nodo actual recibe mensaje?
+			if(id == receptor){
+				System.out.println("\t"+contenido+" Nodo "+id+" tiene respuesta a consulta "+dato);
+				mensaje.setRecibido(true);
+				System.out.println("\t"+contenido+" Nodo "+id+" ha pasado por los nodos"+mensaje.getCamino());
+				// Obtener último nodo
+				int envioDeVuelta = camino.get(camino.size()-1);
+				camino.remove(camino.size()-1);
+				mensaje.setCamino(camino);
+				System.out.println("\t"+contenido+" Enviando respuesta a nodo "+envioDeVuelta);
+				((Transport) nodoActual.getProtocol(transportId)).send(nodoActual, Network.get(envioDeVuelta), mensaje, layerId);
+			}else{
+				// Revisar si cache está vacío
+				if(true){
+					System.out.println("\t"+contenido+" Nodo "+id+" no tiene consulta "+dato+" en cache");
+					// Nodo es vecino?
+					if(vecino==receptor){
+						System.out.println("\t"+contenido+" Nodo "+id+" envía consulta a nodo vecino "+receptor);
+						// Se añade nodo al camino por el que pasa
+						camino.add((int)id);
+						mensaje.setCamino(camino);
+						((Transport) nodoActual.getProtocol(transportId)).send(nodoActual, Network.get((int) vecino), mensaje, layerId);
+					}else{
+						// Si no, calcula distancia de vecino con DHT para ver quien está más cerca
+						int peerCercano = nodoActual.calcularDistancias(contenido,receptor);
+						System.out.println("\t"+contenido+" Nodo "+id+" envía consulta a nodo "+peerCercano);
+						// Se añade nodo al camino por el que pasa
+						camino.add((int)id);
+						mensaje.setCamino(camino);
+						((Transport) nodoActual.getProtocol(transportId)).send(nodoActual, Network.get(peerCercano), mensaje, layerId);
+					}
+				}else{
+					// Buscar en cache
+					
+				}
+			}
+		}else{
+			// Si mensaje ya fue recibido se envía de vuelta hasta el nodo inicial
+			if(camino.size()>0){
+				// Guardar en cache
+				
+				if(nodoActual.getCache().size()<nodoActual.getTamanoCache()){
+					Cache cache = new Cache((int)receptor,(int)dato);
+					ArrayList<Cache> mainCache = nodoActual.getCache();
+					mainCache.add(cache);
+					nodoActual.setCache(mainCache);
+					System.out.print("\t"+contenido+" Nodo : "+id+" Caché actualizado: ");
+					for(int i=0;i<nodoActual.getCache().size();i++){
+						nodoActual.getCache().get(i).printCache();
+					}
+					System.out.println(" ");
+				}
+				// Enviar mensaje a nodo anterior y luego lo borra
+				int enviar = camino.get(camino.size()-1);
+				camino.remove(camino.size()-1);
+				// Actualiza camino que queda por recorrer y envía
+				mensaje.setCamino(camino);
+				System.out.println("\t"+contenido+" Nodo "+id+" envía respuesta a nodo "+enviar);
+				((Transport) nodoActual.getProtocol(transportId)).send(nodoActual, Network.get(enviar), mensaje, layerId);
+			}else{
+				// Nodo emisor que envió la consulta inicialmente
+				System.out.println("\t"+contenido+" Nodo "+id+" Recibió respuesta");
+			}
+			
+			
+		}
 
 	}
+	
+	
 
 	public Layer(String prefix) {
 		/**

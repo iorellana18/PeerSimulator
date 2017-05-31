@@ -21,8 +21,7 @@ public class TrafficGenerator implements Control {
 	public boolean execute() {
 		
 		// Consideraremos cualquier nodo de manera aleatoria de la red para comenzar
-		Node initNode = Network.get(CommonState.r.nextInt(Network.size())); 
-		System.out.println("Nodo: "+initNode.getID());
+		Node initNode = Network.get(CommonState.r.nextInt(Network.size()));
 		//System.out.println("NeighborNode: "+((Linkable) initNode.getProtocol(0)).getNeighbor(0).getID());
 		
 		// Tamaño de base de datos
@@ -35,11 +34,18 @@ public class TrafficGenerator implements Control {
 		long dato = CommonState.r.nextLong(Network.size()*(tamanoBD));
 		// Receptor dependiendo del dato
 		long receptor = buscarReceptor(dato, tamanoBD);
-		
-		// Se añade mensaje
-		// Parámetros: ID nodo emisor, ID nodo receptor, dato que se busca
-		//Message message = new Message();
-		/// EDSimulator.add(0, message, initNode, layerId);
+		// Escribir mensaje
+		String mensaje = "["+emisor+","+receptor+","+dato+"]";
+		System.out.print(mensaje);
+		System.out.println(" Nodo "+emisor+" consultará a nodo "+receptor+" por "+dato);
+		if(emisor==receptor){
+			System.out.println("\tDato se encuentra en el mismo nodo!");
+		}else{
+			// Se añade mensaje
+			// Parámetros: ID nodo emisor, ID nodo receptor, dato que se busca
+			Message message = new Message(emisor,receptor,dato,mensaje);
+			EDSimulator.add(0, message, initNode, layerId);
+		}
 		return false;
 	}
 	
