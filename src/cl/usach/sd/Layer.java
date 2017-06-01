@@ -56,39 +56,53 @@ public class Layer implements Cloneable, EDProtocol {
 		Peer nodoActual = (Peer)currentNode;
 		
 		// Obtener datos de mensaje
+		// Contenido en formato [emisor,receptor,dato buscado]
 		String contenido = mensaje.getMensaje();
+		// Obtiene receptor
 		long receptor = mensaje.getReceptor();
+		// Dato que se está buscando
 		long dato = mensaje.getDato();
+		// Lista con nodos recorridos
 		ArrayList<Integer> camino = mensaje.getCamino();
 		
 		// Datos Peer actual
+		// ID nodo actual
 		long id = nodoActual.getID();
+		// Tamaño cache
 		int tamanoCache = nodoActual.getTamanoCache();
+		// Vecino del nodo actual
 		long vecino = ((Linkable) nodoActual.getProtocol(0)).getNeighbor(0).getID();
+		// Cache del nodo actual
 		Stack<String> cache = nodoActual.getCache();
 		
+		// Si mensaje aún no se ha entregado
 		if(mensaje.getRecibido()==false){
-			// Nodo actual recibe mensaje?
+			// Si nodo actual es el receptor del mensaje
 			if(id == receptor){
 				System.out.println("\t"+contenido+" Nodo "+id+" tiene respuesta a consulta "+dato);
+				// se cambia el estado de recibido
 				mensaje.setRecibido(true);
 				System.out.println("\t"+contenido+" Nodo "+id+" ha pasado por los nodos "+mensaje.getCamino());
 				// Obtener último nodo
 				int envioDeVuelta = camino.get(camino.size()-1);
+				// Quita último dato del camino
 				camino.remove(camino.size()-1);
+				// Setea camino sin último dato
 				mensaje.setCamino(camino);
 				System.out.println("\t"+contenido+" Nodo "+id+" envía respuesta a nodo "+envioDeVuelta);
+				// Envía mensaje a nodo anterior
 				((Transport) nodoActual.getProtocol(transportId)).send(nodoActual, Network.get(envioDeVuelta), mensaje, layerId);
 			}else{
 				// Revisar si cache está vacío
 				if(cache.isEmpty()){
 					System.out.println("\t"+contenido+" Nodo "+id+" no tiene consulta "+dato+" en cache ("+nodoActual.imprimeCache()+")");
-					// Nodo es vecino?
+					// Nodo objetivo es vecino?
 					if(vecino==receptor){
 						System.out.println("\t"+contenido+" Nodo "+id+" envía consulta a nodo vecino "+receptor);
 						// Se añade nodo al camino por el que pasa
 						camino.add((int)id);
 						mensaje.setCamino(camino);
+						// Se envía mensaje a vecino
 						((Transport) nodoActual.getProtocol(transportId)).send(nodoActual, Network.get((int) vecino), mensaje, layerId);
 					}else{
 						// Si no, calcula distancia de vecino con DHT para ver quien está más cerca
@@ -97,22 +111,28 @@ public class Layer implements Cloneable, EDProtocol {
 						// Se añade nodo al camino por el que pasa
 						camino.add((int)id);
 						mensaje.setCamino(camino);
+						// Se envía al peer más cercano al objetivo
 						((Transport) nodoActual.getProtocol(transportId)).send(nodoActual, Network.get(peerCercano), mensaje, layerId);
 					}
 				}else{
-					// Buscar en cache
+					// Buscar en cache si no está vacío
 					if(nodoActual.compruebaDato((int)dato)){
+						// Si está en cache informar que se tiene dato
 						System.out.println("\t"+contenido+" Nodo "+id+" tiene dato "+dato+" en cache ("+nodoActual.imprimeCache()+")");
+						// Se cambia estado de recepción de mensaje
 						mensaje.setRecibido(true);
 						if(camino.isEmpty()){
+							// Está en cache del emisor
 							System.out.println("\t"+contenido+" Nodo "+id+" obtiene respuesta desde su cache");
 						}else{
 							// Obtener último nodo
 							System.out.println("\t"+contenido+" Nodo "+id+" ha pasado por los nodos "+mensaje.getCamino());
 							int envioDeVuelta = camino.get(camino.size()-1);
+							// Se quita ultimo nodo del camino y se setea
 							camino.remove(camino.size()-1);
 							mensaje.setCamino(camino);
 							System.out.println("\t"+contenido+" Nodo "+id+" envía respuesta a nodo "+envioDeVuelta);
+							// Enviar a nodo anterior
 							((Transport) nodoActual.getProtocol(transportId)).send(nodoActual, Network.get(envioDeVuelta), mensaje, layerId);
 						}
 					}else{
@@ -145,12 +165,14 @@ public class Layer implements Cloneable, EDProtocol {
 				if(nodoActual.compruebaDato((int)dato)){
 					System.out.println("\t"+contenido+" Dato "+dato+" ya se encuentra en cache : "+cache);
 				}else{
+					// SI no comprueba si hay espacio en cache
 					if(cache.size()<tamanoCache){
+						// Si hay espacio se añade directamente
 						cache.push(receptor+","+dato);
 						nodoActual.setCache(cache);
 						System.out.println("\t"+contenido+" Nodo "+id+" actualiza cache : "+nodoActual.imprimeCache());
 					}else{
-						// Remueve nodo más antiguo
+						// Si no se remueve nodo más antiguo
 						System.out.println("\t"+contenido+" Nodo "+id+" con cache lleno : "+nodoActual.imprimeCache());
 						cache.remove(0);
 						cache.push(receptor+","+dato);
