@@ -36,7 +36,6 @@ public class Observer implements Control {
 		for (int i = 0; i < Network.size(); i++) {		
 			
 			System.err.println("\nNodo "+((Peer)Network.get(i)).getID()+"\t: "+((Peer)Network.get(i)).getDHT()+"\tCACHE: "+((Peer)Network.get(i)).imprimeCache()+"\tBD: "+((Peer)Network.get(i)).getDB());
-			//System.err.println("\nNodeID: "+((ExampleNode) Network.get(i)).getID()+"\n Suscriptores: "+ ((ExampleNode) Network.get(i)).getSuscriptores()+"\n Publicadores: "+ ((ExampleNode) Network.get(i)).getPublicadores()+"\n Publicaciones: "+ ((ExampleNode) Network.get(i)).getMensajes());
 		
 		}
 		System.err.println(s);
