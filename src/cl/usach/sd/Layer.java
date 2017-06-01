@@ -1,6 +1,7 @@
 package cl.usach.sd;
 
 import java.util.ArrayList;
+import java.util.Stack;
 
 import peersim.config.Configuration;
 import peersim.config.FastConfig;
@@ -62,24 +63,26 @@ public class Layer implements Cloneable, EDProtocol {
 		
 		// Datos Peer actual
 		long id = nodoActual.getID();
+		int tamanoCache = nodoActual.getTamanoCache();
 		long vecino = ((Linkable) nodoActual.getProtocol(0)).getNeighbor(0).getID();
+		Stack<String> cache = nodoActual.getCache();
 		
 		if(mensaje.getRecibido()==false){
 			// Nodo actual recibe mensaje?
 			if(id == receptor){
 				System.out.println("\t"+contenido+" Nodo "+id+" tiene respuesta a consulta "+dato);
 				mensaje.setRecibido(true);
-				System.out.println("\t"+contenido+" Nodo "+id+" ha pasado por los nodos"+mensaje.getCamino());
+				System.out.println("\t"+contenido+" Nodo "+id+" ha pasado por los nodos "+mensaje.getCamino());
 				// Obtener último nodo
 				int envioDeVuelta = camino.get(camino.size()-1);
 				camino.remove(camino.size()-1);
 				mensaje.setCamino(camino);
-				System.out.println("\t"+contenido+" Enviando respuesta a nodo "+envioDeVuelta);
+				System.out.println("\t"+contenido+" Nodo "+id+" envía respuesta a nodo "+envioDeVuelta);
 				((Transport) nodoActual.getProtocol(transportId)).send(nodoActual, Network.get(envioDeVuelta), mensaje, layerId);
 			}else{
 				// Revisar si cache está vacío
-				if(true){
-					System.out.println("\t"+contenido+" Nodo "+id+" no tiene consulta "+dato+" en cache");
+				if(cache.isEmpty()){
+					System.out.println("\t"+contenido+" Nodo "+id+" no tiene consulta "+dato+" en cache ("+nodoActual.imprimeCache()+")");
 					// Nodo es vecino?
 					if(vecino==receptor){
 						System.out.println("\t"+contenido+" Nodo "+id+" envía consulta a nodo vecino "+receptor);
@@ -98,24 +101,62 @@ public class Layer implements Cloneable, EDProtocol {
 					}
 				}else{
 					// Buscar en cache
-					
+					if(nodoActual.compruebaDato((int)dato)){
+						System.out.println("\t"+contenido+" Nodo "+id+" tiene dato "+dato+" en cache ("+nodoActual.imprimeCache()+")");
+						mensaje.setRecibido(true);
+						if(camino.isEmpty()){
+							System.out.println("\t"+contenido+" Nodo "+id+" obtiene respuesta desde su cache");
+						}else{
+							// Obtener último nodo
+							System.out.println("\t"+contenido+" Nodo "+id+" ha pasado por los nodos "+mensaje.getCamino());
+							int envioDeVuelta = camino.get(camino.size()-1);
+							camino.remove(camino.size()-1);
+							mensaje.setCamino(camino);
+							System.out.println("\t"+contenido+" Nodo "+id+" envía respuesta a nodo "+envioDeVuelta);
+							((Transport) nodoActual.getProtocol(transportId)).send(nodoActual, Network.get(envioDeVuelta), mensaje, layerId);
+						}
+					}else{
+						System.out.println("\t"+contenido+" Nodo "+id+" no tiene consulta "+dato+" en cache ("+nodoActual.imprimeCache()+")");
+						// COdigo duplicado
+						// Nodo es vecino?
+						if(vecino==receptor){
+							System.out.println("\t"+contenido+" Nodo "+id+" envía consulta a nodo vecino "+receptor);
+							// Se añade nodo al camino por el que pasa
+							camino.add((int)id);
+							mensaje.setCamino(camino);
+							((Transport) nodoActual.getProtocol(transportId)).send(nodoActual, Network.get((int) vecino), mensaje, layerId);
+						}else{
+							// Si no, calcula distancia de vecino con DHT para ver quien está más cerca
+							int peerCercano = nodoActual.calcularDistancias(contenido,receptor);
+							System.out.println("\t"+contenido+" Nodo "+id+" envía consulta a nodo "+peerCercano);
+							// Se añade nodo al camino por el que pasa
+							camino.add((int)id);
+							mensaje.setCamino(camino);
+							((Transport) nodoActual.getProtocol(transportId)).send(nodoActual, Network.get(peerCercano), mensaje, layerId);
+						}
+					}
 				}
 			}
 		}else{
 			// Si mensaje ya fue recibido se envía de vuelta hasta el nodo inicial
 			if(camino.size()>0){
 				// Guardar en cache
-				
-				if(nodoActual.getCache().size()<nodoActual.getTamanoCache()){
-					Cache cache = new Cache((int)receptor,(int)dato);
-					ArrayList<Cache> mainCache = nodoActual.getCache();
-					mainCache.add(cache);
-					nodoActual.setCache(mainCache);
-					System.out.print("\t"+contenido+" Nodo : "+id+" Caché actualizado: ");
-					for(int i=0;i<nodoActual.getCache().size();i++){
-						nodoActual.getCache().get(i).printCache();
+				//Comprueba si dato ya existe en cache
+				if(nodoActual.compruebaDato((int)dato)){
+					System.out.println("\t"+contenido+" Dato "+dato+" ya se encuentra en cache : "+cache);
+				}else{
+					if(cache.size()<tamanoCache){
+						cache.push(receptor+","+dato);
+						nodoActual.setCache(cache);
+						System.out.println("\t"+contenido+" Nodo "+id+" actualiza cache : "+nodoActual.imprimeCache());
+					}else{
+						// Remueve nodo más antiguo
+						System.out.println("\t"+contenido+" Nodo "+id+" con cache lleno : "+nodoActual.imprimeCache());
+						cache.remove(0);
+						cache.push(receptor+","+dato);
+						nodoActual.setCache(cache);
+						System.out.println("\t"+contenido+" Nodo "+id+" actualiza cache : "+nodoActual.imprimeCache());
 					}
-					System.out.println(" ");
 				}
 				// Enviar mensaje a nodo anterior y luego lo borra
 				int enviar = camino.get(camino.size()-1);
@@ -133,6 +174,8 @@ public class Layer implements Cloneable, EDProtocol {
 		}
 
 	}
+	
+	
 	
 	
 

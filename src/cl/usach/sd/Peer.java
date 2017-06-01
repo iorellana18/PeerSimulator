@@ -1,14 +1,15 @@
 package cl.usach.sd;
 
 import java.util.ArrayList;
+import java.util.Stack;
 
 import peersim.core.GeneralNode;
 
 public class Peer extends GeneralNode{
 	
 	private int id;
-	// Lista que guarda peers en cache
-	private ArrayList<Cache> cache;
+	// Objeto que guarda peers en cache
+	private Stack<String> cache;
 	// Lista que guarda peers en DHT
 	private ArrayList<Integer> DHT;
 	// Lista que guarda valores en base de datos
@@ -25,6 +26,7 @@ public class Peer extends GeneralNode{
 	private int tamanoRed;
 	// Tamaño cache
 	private int tamanoCache;
+	
 
 	public Peer(String arg0) {
 		super(arg0);
@@ -35,7 +37,6 @@ public class Peer extends GeneralNode{
 	public void initPeer(int id,int tamanoCache, ArrayList<Integer> DHT, int tamanoRed, ArrayList<Integer> DB,
 			int sizeDB){
 		setId(id);
-		setCache(new ArrayList<Cache>());
 		setDHT(DHT);
 		setMensajeIda(true);
 		setCamino(new ArrayList<Integer>());
@@ -44,6 +45,7 @@ public class Peer extends GeneralNode{
 		setTamanoRed(tamanoRed);
 		setTamanoCache(tamanoCache);
 		setSizeDB(sizeDB);
+		setCache(new Stack<String>());
 		System.err.print("Nodo: "+id);
 		System.out.println("\t\tVecino: "+vecino+"\tDHT: "+DHT+"\t\tCache: "+cache+"\t\tBD: "+DB+"\n");
 	}
@@ -86,13 +88,36 @@ public class Peer extends GeneralNode{
 		return menor;
 	}
 	
+	public String imprimeCache(){
+		String imprime = "";
+		for(int i=0;i<cache.size();i++){
+			imprime=imprime+"["+cache.get(i)+"] ";
+		}
+		return imprime;
+	}
+	
+	public Boolean compruebaDato(int dato){
+		if(cache.isEmpty()){
+			return false;
+		}else{
+			for(int i=0;i<cache.size();i++){
+				String separador[] = cache.get(i).split(",");
+				String comparador = String.valueOf(dato);
+				if(separador[1].compareTo(comparador)==0){
+					return true;
+				}
+			}
+			return false;
+		}
+	}
+	
 	
 	public int getVecino(){return vecino;}
 	public void setVecino(int id, int tamanoRed){if(id==(tamanoRed-1)){this.vecino=0;}else{this.vecino=id+1;}}
 	public int getId(){return id;}
 	public void setId(int id){this.id=id;}
-	public ArrayList<Cache> getCache() {return cache;}
-	public void setCache(ArrayList<Cache> cache) {this.cache = cache;}
+	public Stack<String> getCache() {return cache;}
+	public void setCache(Stack<String> cache) {this.cache = cache;}
 	public ArrayList<Integer> getDHT() {return DHT;}
 	public void setDHT(ArrayList<Integer> dHT) {DHT = dHT;}
 	public ArrayList<Integer> getDB() {return DB;}
