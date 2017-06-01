@@ -34,14 +34,14 @@ public class Peer extends GeneralNode{
 	}
 
 
-	public void initPeer(int id,int tamanoCache, ArrayList<Integer> DHT, int tamanoRed, ArrayList<Integer> DB,
+	public void initPeer(int id,int tamanoCache, int tamanoRed,int d,
 			int sizeDB){
 		setId(id);
-		setDHT(DHT);
+		myDHT(tamanoRed,d,id);
 		setMensajeIda(true);
 		setCamino(new ArrayList<Integer>());
 		setVecino(id,tamanoRed);
-		setDB(DB);
+		obtenerBD(id,sizeDB);
 		setTamanoRed(tamanoRed);
 		setTamanoCache(tamanoCache);
 		setSizeDB(sizeDB);
@@ -49,8 +49,83 @@ public class Peer extends GeneralNode{
 		System.err.print("Nodo: "+id);
 		System.out.println("\t\tVecino: "+vecino+"\tDHT: "+DHT+"\t\tCache: "+cache+"\t\tBD: "+DB+"\n");
 	}
-	
+	//////////////////////////////////////////////////
 	// Métodos
+	/////////////////////////////////////////////////
+	
+	// -----------------------------------
+	// Método que inicia la base de datos para cada nodo ingresando b cantidad de datos
+	// -------------------------------------
+	public void obtenerBD(int id, int tamanoBD){
+		// Se inicia una lista vacía
+		ArrayList<Integer> base = new ArrayList<Integer>();
+		// Se obtiene el número del id del nodo, el cual se multiplica por el tamaño de la base 
+		// de datos para obtener el número inicial
+		int inicial = id * tamanoBD;
+		// Se realiza un ciclo para obtener los b números siguientes y añadirlos a la lista
+		for(int i=0;i<tamanoBD;i++){
+			base.add(inicial);
+			inicial++;
+		}
+		// Se setea la lista obtenida para cada nodo
+		setDB(base);
+	}
+	
+	// -----------------------------------
+	// Método que calcula el nodo resultante dado su posición y distancia (para DHT)
+	// -------------------------------------
+	public int calculaSuma(int base, int suma, int tamanoRed){
+		if(base+suma>=tamanoRed){
+			// Si el id del nodo mas la distancia es mayor al tamaño de la red
+			// se le resta el tamaño de la red
+			return (base+suma)-tamanoRed;
+		}else{
+			// Si no se ingresa la suma simple
+			return base+suma;
+		}
+	}
+	
+	// -----------------------------------
+	// Método que calcula el nodo resultante (en sentido inverso) dado su posición y distancia (para DHT)
+	// -------------------------------------
+	public int calculaResta(int base, int suma, int tamanoRed){
+		if(base-suma<0){
+			// Si el id del nodo menos la distancia hacia atrás es menor a 0
+			// Se le resta al tamaño de la red
+			return tamanoRed-(suma-base);
+		}else{
+			// Si no se ingresa la resta
+			return base-suma;
+		}
+	}
+	// -----------------------------------
+	// Método que obtiene el DHT para cada nodo dado su id y distancia d
+	// -------------------------------------
+	public void myDHT(int tamanoRed, int d,int id){
+		// Se inicia la lista que guardará los DHT
+		ArrayList<Integer> DHT = new ArrayList<Integer>();
+		if(tamanoRed%2==0){
+			// Si la red tiene una cantidad de nodos par se le asigna
+			// el nodo que se encuentra en la mitad de la red
+			DHT.add(calculaSuma(id,tamanoRed/2,tamanoRed));
+		}else{
+			// SI la red tien una cantidad de nodos impar se le asigna
+			// el nodo que se encuentra a la mitad + 1
+			DHT.add(calculaSuma(id,(tamanoRed/2)+1,tamanoRed));
+		}
+		// Número que corresponde a 2^2 ya que 2^1 se añade anteriormente
+		int numeroMagico = 4; 
+		for(int i=0;i<d;i++){
+			// Para cada nodo se calcula la distancia n/2^x y se asignan sus DHT
+			int distancia = tamanoRed/numeroMagico;
+			DHT.add(calculaSuma(id,distancia,tamanoRed));
+			DHT.add(calculaResta(id,distancia,tamanoRed));
+			// Siguiente denominador
+			numeroMagico=numeroMagico*2;
+		}
+
+		setDHT(DHT);
+	}
 	
 	public int calcularDistancias(String mensaje, long receptor){
 		ArrayList<Integer> lista = new ArrayList<Integer>();

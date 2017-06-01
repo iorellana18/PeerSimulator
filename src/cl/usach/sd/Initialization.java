@@ -38,13 +38,14 @@ public class Initialization implements Control {
 		 */
 		//int nodoInicial = CommonState.r.nextInt(Network.size());
 		
-		//Valores iniciales
+		//Valores iniciales que se obtienen de archivo de configuración
 		int tamanoRed = Network.size();
 		int tamanoBD = Configuration.getInt(prefix + ".BD");
 		int Cache = Configuration.getInt(prefix + ".Cache");
 		int d = Configuration.getInt(prefix + ".d");
 		int tamanoDHT = 1+2*d;
 		
+		// Se imprimen valores iniciales
 		System.out.println("Valores iniciales");
 		System.out.println("n:\t"+tamanoRed+"\t [Tamaño de la red]");
 		System.out.println("b:\t"+tamanoBD+"\t [Tamaño de la base de datos]");
@@ -61,15 +62,17 @@ public class Initialization implements Control {
 		
 		
 		for (int i = 0; i < Network.size(); i++) {	
-			//Método que inicializa listas para publicar/suscribirse
-			ArrayList<Integer> BD = obtenerBD(i,tamanoBD);
-			ArrayList<Integer> DHT = myDHT(tamanoRed,d,i);
-			((Peer)Network.get(i)).initPeer(i,Cache,DHT,tamanoRed,BD,tamanoBD);
+			// Inicializa los valores de cada Peer
+			((Peer)Network.get(i)).initPeer(i,Cache,tamanoRed,d,tamanoBD);
+			// Asigna los vecinos de cada nodo como el nodo siguiente en el sentido de agujas de reloj
 			int linkableID = FastConfig.getLinkable(this.idLayer);
 			Linkable linkable = (Linkable)((Peer) Network.get(i)).getProtocol(linkableID);
+			
 			if(i < Network.size()-1){
+				// Si el peer no es el último nodo en la red, el vecino es el nodo siguiente
 				linkable.addNeighbor((Peer)Network.get(i+1));
 			}else{
+				// Si es el último nodo, el vecino es el nodo 0
 				linkable.addNeighbor((Peer)Network.get(0));
 			}
 		}
@@ -77,6 +80,9 @@ public class Initialization implements Control {
 		return true;
 	}
 	
+	// -----------------------------------
+	// Método que calcula distancias para DHT para imprimirlos al inicio
+	// -------------------------------------
 	public ArrayList<Integer> obtenerDistancias(int tamanoRed){
 		ArrayList<Integer> distancias = new ArrayList<Integer>();
 		/// 2^x
@@ -95,7 +101,7 @@ public class Initialization implements Control {
 				valorX++;
 			}
 		}
-		
+		// Obtiene distancias para cada nodo
 		for(int i=0;i<denominadores.size();i++){
 			distancias.add(tamanoRed/denominadores.get(i));
 		}
@@ -104,47 +110,6 @@ public class Initialization implements Control {
 		return distancias;
 	}
 	
-	public ArrayList<Integer> obtenerBD(int id, int tamanoBD){
-		ArrayList<Integer> base = new ArrayList<Integer>();
-		int inicial = id * tamanoBD;
-		for(int i=0;i<tamanoBD;i++){
-			base.add(inicial);
-			inicial++;
-		}
-		return base;
-	}
-	
-	public int calculaSuma(int base, int suma, int tamanoRed){
-		if(base+suma>=tamanoRed){
-			return (base+suma)-tamanoRed;
-		}else{
-			return base+suma;
-		}
-	}
-	public int calculaResta(int base, int suma, int tamanoRed){
-		if(base-suma<0){
-			return tamanoRed-(suma-base);
-		}else{
-			return base-suma;
-		}
-	}
-	
-	public ArrayList<Integer> myDHT(int tamanoRed, int d,int id){
-		ArrayList<Integer> DHT = new ArrayList<Integer>();
-		if(tamanoRed%2==0){
-			DHT.add(calculaSuma(id,tamanoRed/2,tamanoRed));
-		}else{
-			DHT.add(calculaSuma(id,(tamanoRed/2)+1,tamanoRed));
-		}
-		int numeroMagico = 4; 
-		for(int i=0;i<d;i++){
-			int distancia = tamanoRed/numeroMagico;
-			DHT.add(calculaSuma(id,distancia,tamanoRed));
-			DHT.add(calculaResta(id,distancia,tamanoRed));
-			numeroMagico=numeroMagico*2;
-		}
 
-		return DHT;
-	}
 
 }
