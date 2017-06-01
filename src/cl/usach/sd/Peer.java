@@ -14,10 +14,6 @@ public class Peer extends GeneralNode{
 	private ArrayList<Integer> DHT;
 	// Lista que guarda valores en base de datos
 	private ArrayList<Integer> DB;
-	// Dato que indica si mensaje va de ida o de vuelta // Ida = true // Vuelta = false
-	private Boolean mensajeIda;
-	// Lista que guarda los peers por los que se ha pasado para llegar al destino
-	private ArrayList<Integer> camino;
 	// Vecino
 	private int vecino;
 	// Tamaño de base de datos
@@ -34,14 +30,16 @@ public class Peer extends GeneralNode{
 	}
 
 
-	public void initPeer(int id,int tamanoCache, int tamanoRed,int d,
-			int sizeDB){
+	public void initPeer(int id,int tamanoCache, int tamanoRed,int d,int sizeDB){
+		// Guarda id actual
 		setId(id);
+		// Obtiene DHT
 		myDHT(tamanoRed,d,id);
-		setMensajeIda(true);
-		setCamino(new ArrayList<Integer>());
+		// Obtiene id de vecino
 		setVecino(id,tamanoRed);
+		// Obtiene bade de datos
 		obtenerBD(id,sizeDB);
+		// Setea datos iniciales
 		setTamanoRed(tamanoRed);
 		setTamanoCache(tamanoCache);
 		setSizeDB(sizeDB);
@@ -127,34 +125,30 @@ public class Peer extends GeneralNode{
 		setDHT(DHT);
 	}
 	
-	public int calcularDistancias(String mensaje, long receptor){
-		ArrayList<Integer> lista = new ArrayList<Integer>();
-		System.out.print("\t"+mensaje+" ");
-		System.out.print("Nodo "+id+" calcula distancias con "+vecino);
-		lista.add(vecino);
-		for(int i=0;i<DHT.size();i++){
-			System.out.print(", "+DHT.get(i));
-			lista.add(DHT.get(i));
-		}
-		System.out.println(" ");
-		return lista.get(distanciador((int)receptor,lista,mensaje));
-	}
 	
+	// -----------------------------------
+	// Método que dada una lista y un objetivo calcula cual de los nodos está a una distancia menor
+	// -------------------------------------
 	public int distanciador(int objetivo, ArrayList<Integer> actual, String contenido){
-		
+		// Se inicia con el id del nodo 0
 		int menor = 0;
 		int min = tamanoRed;
 		for(int i=0;i<actual.size();i++){
 			int distancia;
 			if(objetivo>actual.get(i)){
+				// Si objetivo es mayor al nodo actual la ditancia es su resta simple
 				distancia = objetivo - actual.get(i);
 			}else if(objetivo == actual.get(i)){
+				// Si el objetivo es igual al nodo actual quiere decir que se encuentra en DHT
 				System.out.println("\t"+contenido+" Nodo objetivo se encuentra en DHT");
 				return i;
 			}else{
+				// Si objetivo es menor que actual la distancia es la resta de la red
+				// se resta el id del nodo actual y se suma el objetivo para obtener distancia
 				distancia = (tamanoRed - actual.get(i)) + objetivo;
 			}
 			if(distancia<min){
+				// Si la distancia resulta ser menor a la menor actual se guarda como la menor
 				menor = i;
 				min = distancia;
 			}
@@ -163,6 +157,32 @@ public class Peer extends GeneralNode{
 		return menor;
 	}
 	
+	// -----------------------------------
+	// Método que calcula el nodo que está a menor distancia del nodo objetivo
+	// entre el vecino y los de su DHT
+	// -------------------------------------
+	public int calcularDistancias(String mensaje, long receptor){
+		// Lista que contendrá posiciones para comparar
+		ArrayList<Integer> lista = new ArrayList<Integer>();
+		// Informa que se realiza este cálculo
+		System.out.print("\t"+mensaje+" ");
+		System.out.print("Nodo "+id+" calcula distancias con "+vecino);
+		// Se añade al vecino
+		lista.add(vecino);
+		// Se añaden los nodos del DHT
+		for(int i=0;i<DHT.size();i++){
+			System.out.print(", "+DHT.get(i));
+			lista.add(DHT.get(i));
+		}
+		System.out.println(" ");
+		// Retorna el nodo más cercano al objetivo utilizando método anterior
+		return lista.get(distanciador((int)receptor,lista,mensaje));
+	}
+	
+
+	// -----------------------------------
+	// Método que imprime de forma ordenada los datos en cache 
+	// -------------------------------------
 	public String imprimeCache(){
 		String imprime = "";
 		for(int i=0;i<cache.size();i++){
@@ -171,21 +191,34 @@ public class Peer extends GeneralNode{
 		return imprime;
 	}
 	
+	
+	// -----------------------------------
+	// Método que comprueba si dato ingresado está en cache
+	// -------------------------------------
 	public Boolean compruebaDato(int dato){
 		if(cache.isEmpty()){
+			// si cache está vacío retorna falso
 			return false;
 		}else{
+			// si no busca en cada dato del cache
 			for(int i=0;i<cache.size();i++){
+				// Se separa el dato del cache (compuesto de nodo,dato)
 				String separador[] = cache.get(i).split(",");
+				// Se convierte dato en String para compararlo fácilmente
 				String comparador = String.valueOf(dato);
 				if(separador[1].compareTo(comparador)==0){
+					// Si se encuentra dato en cache retorna verdadero
 					return true;
 				}
 			}
+			// Si no se encontró retorna falso
 			return false;
 		}
 	}
 	
+	//////////////////////////////////////////////////
+	// Getters y Setters
+	/////////////////////////////////////////////////
 	
 	public int getVecino(){return vecino;}
 	public void setVecino(int id, int tamanoRed){if(id==(tamanoRed-1)){this.vecino=0;}else{this.vecino=id+1;}}
@@ -197,10 +230,6 @@ public class Peer extends GeneralNode{
 	public void setDHT(ArrayList<Integer> dHT) {DHT = dHT;}
 	public ArrayList<Integer> getDB() {return DB;}
 	public void setDB(ArrayList<Integer> dB) {DB = dB;}
-	public ArrayList<Integer> getCamino() {return camino;}
-	public void setCamino(ArrayList<Integer> camino) {this.camino = camino;}
-	public Boolean getMensajeIda() {return mensajeIda;}
-	public void setMensajeIda(Boolean mensajeIda) {this.mensajeIda = mensajeIda;}
 	public void setSizeDB(int sizeDB){this.sizeDB=sizeDB;}
 	public int getSizeDB(){return sizeDB;}
 	public void setTamanoRed(int tamanoRed){this.tamanoRed=tamanoRed;}
