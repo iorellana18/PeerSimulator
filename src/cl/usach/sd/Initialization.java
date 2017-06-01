@@ -63,7 +63,7 @@ public class Initialization implements Control {
 		for (int i = 0; i < Network.size(); i++) {	
 			//Método que inicializa listas para publicar/suscribirse
 			ArrayList<Integer> BD = obtenerBD(i,tamanoBD);
-			ArrayList<Integer> DHT = myDHT(i,distancias,tamanoRed,tamanoDHT);
+			ArrayList<Integer> DHT = myDHT(tamanoRed,d,i);
 			((Peer)Network.get(i)).initPeer(i,Cache,DHT,tamanoRed,BD,tamanoBD);
 			int linkableID = FastConfig.getLinkable(this.idLayer);
 			Linkable linkable = (Linkable)((Peer) Network.get(i)).getProtocol(linkableID);
@@ -114,20 +114,36 @@ public class Initialization implements Control {
 		return base;
 	}
 	
-	public ArrayList<Integer> myDHT(int id, ArrayList<Integer> distancias,int tamanoRed, int tamanoDHT){
-		ArrayList<Integer> DHT = new ArrayList<Integer>();
-		for(int i=0;i<tamanoDHT;i++){
-			
-			if(DHT.size()<tamanoDHT && i<distancias.size()){
-				int vecinoDht = id+distancias.get(i);
-				if(vecinoDht<tamanoRed){
-					DHT.add(vecinoDht);
-				}else{
-					vecinoDht = vecinoDht - tamanoRed;
-					DHT.add(vecinoDht);
-				}
-			}
+	public int calculaSuma(int base, int suma, int tamanoRed){
+		if(base+suma>=tamanoRed){
+			return (base+suma)-tamanoRed;
+		}else{
+			return base+suma;
 		}
+	}
+	public int calculaResta(int base, int suma, int tamanoRed){
+		if(base-suma<0){
+			return tamanoRed-(suma-base);
+		}else{
+			return base-suma;
+		}
+	}
+	
+	public ArrayList<Integer> myDHT(int tamanoRed, int d,int id){
+		ArrayList<Integer> DHT = new ArrayList<Integer>();
+		if(tamanoRed%2==0){
+			DHT.add(calculaSuma(id,tamanoRed/2,tamanoRed));
+		}else{
+			DHT.add(calculaSuma(id,(tamanoRed/2)+1,tamanoRed));
+		}
+		int numeroMagico = 4; 
+		for(int i=0;i<d;i++){
+			int distancia = tamanoRed/numeroMagico;
+			DHT.add(calculaSuma(id,distancia,tamanoRed));
+			DHT.add(calculaResta(id,distancia,tamanoRed));
+			numeroMagico=numeroMagico*2;
+		}
+
 		return DHT;
 	}
 
